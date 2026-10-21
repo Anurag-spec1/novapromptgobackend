@@ -19,6 +19,8 @@ type Deps struct {
 	Tags         *handlers.TagHandler
 	Descriptions *handlers.DescriptionHandler
 	AdKeys       *handlers.AdKeyHandler
+	Search       *handlers.SearchHandler    
+	Uploads      *handlers.UploadHandler
 	Cache        *cache.Client
 }
 
@@ -71,6 +73,10 @@ func NewRouter(d Deps) http.Handler {
 			r.Get("/{key}", d.AdKeys.Get)
 			r.Put("/{key}", d.AdKeys.Upsert)
 		})
+		
+		r.Get("/search", d.Search.Search)
+		r.Post("/uploads/signature", d.Uploads.Signature)
+		r.Post("/uploads/image", d.Uploads.Upload)
 		
 		_ = strictRL
 	})
