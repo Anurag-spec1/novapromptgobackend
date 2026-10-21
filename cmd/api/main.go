@@ -29,21 +29,21 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	
+
 	pool, err := db.NewPool(ctx, cfg.DatabaseURL, cfg.DBMaxConns, cfg.DBMinConns, cfg.DBMaxConnLife, cfg.DBMaxConnIdle)
 	if err != nil {
 		slog.Error("db_pool", "err", err)
 		os.Exit(1)
 	}
 	defer pool.Close()
-	
+
 	cacheClient, err := cache.NewClient(ctx, cfg.RedisURL)
 	if err != nil {
 		slog.Error("redis_client", "err", err)
 		os.Exit(1)
 	}
 	defer cacheClient.Close()
-	
+
 	router := server.NewRouter(server.Deps{
 		Health: &handlers.HealthHandler{
 			Pool:  pool,

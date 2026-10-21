@@ -31,7 +31,7 @@ func Load() (*Config, error) {
 		Env:             getEnv("APP_ENV", "development"),
 		HTTPAddr:        getEnv("HTTP_ADDR", ":8080"),
 		DatabaseURL:     getEnv("DATABASE_URL", ""),
-		RedisURL:        getEnv("REDIS_URL", "redis://localhost:6379/0"),
+		RedisURL: 		 getEnv("REDIS_URL", ""),
 		DBMaxConns:      int32(getEnvInt("DB_MAX_CONNS", 20)),
 		DBMinConns:      int32(getEnvInt("DB_MIN_CONNS", 2)),
 		DBMaxConnLife:   getEnvDuration("DB_MAX_CONN_LIFETIME", time.Hour),
@@ -45,6 +45,10 @@ func Load() (*Config, error) {
 	if cfg.DatabaseURL == "" {
 		return nil, fmt.Errorf("DATABASE_URL is required")
 	}
+
+	if cfg.RedisURL == "" {
+    return nil, fmt.Errorf("REDIS_URL is required")
+    }
 	return cfg, nil
 }
 
