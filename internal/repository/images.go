@@ -17,6 +17,10 @@ type ImageRepo struct {
 	pool *pgxpool.Pool
 }
 
+func (r *ImageRepo) Search(context context.Context, tags []string, q string, limit int, offset int) (any, any, any) {
+	panic("unimplemented")
+}
+
 func NewImageRepo(pool *pgxpool.Pool) *ImageRepo {
 	return &ImageRepo{pool: pool}
 }
