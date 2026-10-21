@@ -57,20 +57,26 @@ if err != nil {
 	}
 	defer cacheClient.Close()
 
-	router := server.NewRouter(server.Deps{
+		router := server.NewRouter(server.Deps{
 		Health: &handlers.HealthHandler{
 			Pool:  pool,
 			Cache: cacheClient,
 		},
 		Images: &handlers.ImageHandler{
-    Repo:       repository.NewImageRepo(pool),
-    Cloudinary: cldClient,
-},
+			Repo:       repository.NewImageRepo(pool),
+			Cloudinary: cldClient,
+		},
 		Categories:   &handlers.CategoryHandler{Repo: repository.NewCategoryRepo(pool), Cache: cacheClient},
 		Tags:         &handlers.TagHandler{Repo: repository.NewTagRepo(pool)},
 		Descriptions: &handlers.DescriptionHandler{Repo: repository.NewDescriptionRepo(pool)},
 		AdKeys:       &handlers.AdKeyHandler{Repo: repository.NewAdKeyRepo(pool), Cache: cacheClient},
-		Cache:        cacheClient,
+		Search: &handlers.SearchHandler{
+			Repo: repository.NewImageRepo(pool),
+		},
+		Uploads: &handlers.UploadHandler{
+			Cloudinary: cldClient,
+		},
+		Cache: cacheClient,
 	})
 
 	srv := &http.Server{
