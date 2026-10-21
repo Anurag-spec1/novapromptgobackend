@@ -2,25 +2,29 @@ package handlers
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/Anurag-spec1/novapromptgobackend/internal/cloudinary"
 	"github.com/Anurag-spec1/novapromptgobackend/internal/httputil"
 	"github.com/Anurag-spec1/novapromptgobackend/internal/models"
 	"github.com/Anurag-spec1/novapromptgobackend/internal/repository"
 )
 
 type ImageHandler struct {
-	Repo *repository.ImageRepo
+	Repo       *repository.ImageRepo
+	Cloudinary *cloudinary.Client
 }
 
 func (h *ImageHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		Title         string  `json:"title"`
-		CloudinaryURL string  `json:"cloudinary_url"`
-		CategoryID    *string `json:"category_id,omitempty"`
+		Title              string  `json:"title"`
+		CloudinaryURL      string  `json:"cloudinary_url"`
+		CloudinaryPublicID string  `json:"cloudinary_public_id,omitempty"`
+		CategoryID         *string `json:"category_id,omitempty"`
 	}
 	if err := httputil.Decode(r, &body); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid_body", err.Error())
@@ -31,9 +35,10 @@ func (h *ImageHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	img := &models.Image{
-		Title:         body.Title,
-		CloudinaryURL: body.CloudinaryURL,
-		CategoryID:    body.CategoryID,
+		Title:              body.Title,
+		CloudinaryURL:      body.CloudinaryURL,
+		CloudinaryPublicID: body.CloudinaryPublicID,
+		CategoryID:         body.CategoryID,
 	}
 	if err := h.Repo.Create(r.Context(), img); err != nil {
 		httputil.Error(w, http.StatusInternalServerError, "db_error", err.Error())
@@ -70,21 +75,31 @@ func (h *ImageHandler) List(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusInternalServerError, "db_error", err.Error())
 		return
 	}
+	if images == nil {
+		images = []models.Image{}
+	}
 	httputil.JSON(w, http.StatusOK, map[string]any{"items": images, "limit": limit, "offset": offset})
 }
 
 func (h *ImageHandler) Update(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var body struct {
-		Title         string  `json:"title"`
-		CloudinaryURL string  `json:"cloudinary_url"`
-		CategoryID    *string `json:"category_id,omitempty"`
+		Title              string  `json:"title"`
+		CloudinaryURL      string  `json:"cloudinary_url"`
+		CloudinaryPublicID string  `json:"cloudinary_public_id,omitempty"`
+		CategoryID         *string `json:"category_id,omitempty"`
 	}
 	if err := httputil.Decode(r, &body); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid_body", err.Error())
 		return
 	}
-	img := &models.Image{ID: id, Title: body.Title, CloudinaryURL: body.CloudinaryURL, CategoryID: body.CategoryID}
+	img := &models.Image{
+		ID:                 id,
+		Title:              body.Title,
+		CloudinaryURL:      body.CloudinaryURL,
+		CloudinaryPublicID: body.CloudinaryPublicID,
+		CategoryID:         body.CategoryID,
+	}
 	if err := h.Repo.Update(r.Context(), img); errors.Is(err, repository.ErrNotFound) {
 		httputil.Error(w, http.StatusNotFound, "not_found", "image not found")
 		return
@@ -97,7 +112,8 @@ func (h *ImageHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *ImageHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	err := h.Repo.Delete(r.Context(), id)
+
+	publicID, err := h.Repo.Delete(r.Context(), id)
 	if errors.Is(err, repository.ErrNotFound) {
 		httputil.Error(w, http.StatusNotFound, "not_found", "image not found")
 		return
@@ -106,5 +122,13 @@ func (h *ImageHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusInternalServerError, "db_error", err.Error())
 		return
 	}
+
+	if publicID != "" && h.Cloudinary != nil {
+		if err := h.Cloudinary.Delete(r.Context(), publicID); err != nil {
+			slog.Warn("cloudinary_delete_failed",
+				"err", err, "public_id", publicID, "image_id", id)
+		}
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }

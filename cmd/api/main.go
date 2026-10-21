@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/Anurag-spec1/novapromptgobackend/internal/cache"
+	"github.com/Anurag-spec1/novapromptgobackend/internal/cloudinary"
 	"github.com/Anurag-spec1/novapromptgobackend/internal/config"
 	"github.com/Anurag-spec1/novapromptgobackend/internal/db"
 	"github.com/Anurag-spec1/novapromptgobackend/internal/handlers"
@@ -26,6 +27,18 @@ func main() {
 		slog.Error("config", "err", err)
 		os.Exit(1)
 	}
+
+	cldClient, err := cloudinary.NewClient(
+    cfg.CloudinaryCloudName,
+    cfg.CloudinaryAPIKey,
+    cfg.CloudinaryAPISecret,
+    cfg.CloudinaryFolder,
+    )
+
+if err != nil {
+    slog.Error("cloudinary_client", "err", err)
+    os.Exit(1)
+}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -49,7 +62,10 @@ func main() {
 			Pool:  pool,
 			Cache: cacheClient,
 		},
-		Images:       &handlers.ImageHandler{Repo: repository.NewImageRepo(pool)},
+		Images: &handlers.ImageHandler{
+    Repo:       repository.NewImageRepo(pool),
+    Cloudinary: cldClient,
+},
 		Categories:   &handlers.CategoryHandler{Repo: repository.NewCategoryRepo(pool), Cache: cacheClient},
 		Tags:         &handlers.TagHandler{Repo: repository.NewTagRepo(pool)},
 		Descriptions: &handlers.DescriptionHandler{Repo: repository.NewDescriptionRepo(pool)},

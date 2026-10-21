@@ -3,12 +3,13 @@ package models
 import "time"
 
 type Image struct {
-	ID            string    `json:"id"`
-	Title         string    `json:"title"`
-	CloudinaryURL string    `json:"cloudinary_url"`
-	CategoryID    *string   `json:"category_id,omitempty"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
+	ID                 string    `json:"id"`
+	Title              string    `json:"title"`
+	CloudinaryURL      string    `json:"cloudinary_url"`
+	CloudinaryPublicID string    `json:"cloudinary_public_id,omitempty"`
+	CategoryID         *string   `json:"category_id,omitempty"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
 }
 
 type Category struct {
