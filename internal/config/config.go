@@ -21,6 +21,11 @@ type Config struct {
 	WriteTimeout    time.Duration
 	IdleTimeout     time.Duration
 	ShutdownTimeout time.Duration
+
+	CloudinaryCloudName string
+	CloudinaryAPIKey    string
+	CloudinaryAPISecret string
+	CloudinaryFolder    string
 }
 
 func Load() (*Config, error) {
@@ -39,6 +44,11 @@ func Load() (*Config, error) {
 		WriteTimeout:    getEnvDuration("HTTP_WRITE_TIMEOUT", 15*time.Second),
 		IdleTimeout:     getEnvDuration("HTTP_IDLE_TIMEOUT", 60*time.Second),
 		ShutdownTimeout: getEnvDuration("HTTP_SHUTDOWN_TIMEOUT", 20*time.Second),
+
+		CloudinaryCloudName: getEnv("CLOUDINARY_CLOUD_NAME", ""),
+		CloudinaryAPIKey:    getEnv("CLOUDINARY_API_KEY", ""),
+		CloudinaryAPISecret: getEnv("CLOUDINARY_API_SECRET", ""),
+		CloudinaryFolder:    getEnv("CLOUDINARY_UPLOAD_FOLDER", "nova"),
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -48,6 +58,11 @@ func Load() (*Config, error) {
 	if cfg.RedisURL == "" {
     return nil, fmt.Errorf("REDIS_URL is required")
     }
+
+	if cfg.CloudinaryCloudName == "" || cfg.CloudinaryAPIKey == "" || cfg.CloudinaryAPISecret == "" {
+	return nil, fmt.Errorf("CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET are required")
+	}
+
 	return cfg, nil
 }
 
